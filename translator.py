@@ -1,61 +1,100 @@
-import random
-import math
+import random, sys, os, rabinMiller, cryptoMath
 
-def is_prime(num):
-    if num < 2:
-        return False
-    for i in range(2, int(math.sqrt(num)) + 1):
-        if num % i == 0:
-            return False
-    return True
+def main():
+   makeKeyFiles('RSA_demo', 2048)
 
-def generate_prime(bits):
-    while True:
-        num = random.getrandbits(bits)
+def generateKey(keySize):
+   # Step 1: Create two prime numbers, p and q. Calculate n = p * q.
+   print('Generating p prime...')
+   p = rabinMiller.generateLargePrime(keySize)
+   print('Generating q prime...')
+   q = rabinMiller.generateLargePrime(keySize)
+   n = p * q
+	
+   # Step 2: Create a number e that is relatively prime to (p-1)*(q-1).
+   print('Generating e that is relatively prime to (p-1)*(q-1)...')
+   while True:
+      e = random.randrange(2 ** (keySize - 1), 2 ** (keySize))
+      if cryptoMath.gcd(e, (p - 1) * (q - 1)) == 1:
+         break
+   
+   # Step 3: Calculate d, the mod inverse of e.
+   print('Calculating d that is mod inverse of e...')
+   d = cryptoMath.findModInverse(e, (p - 1) * (q - 1))
+   publicKey = (n, e)
+   privateKey = (n, d)
+   print('Public key:', publicKey)
+   print('Private key:', privateKey)
+   return (publicKey, privateKey)
+
+def makeKeyFiles(name, keySize):
+   if os.path.exists('%s_pubkey.txt' % (name)) or os.path.exists('%s_privkey.txt' % (name)):
+     return "keys are already made"
+   publicKey, privateKey = generateKey(keySize)
+   print()
+   print('The public key is a %s and a %s digit number.' % (len(str(publicKey[0])), len(str(publicKey[1])))) 
+   print('Writing public key to file %s_pubkey.txt...' % (name))
+   
+   fo = open('%s_pubkey.txt' % (name), 'w')
+   fo.write('%s,%s,%s' % (keySize, publicKey[0], publicKey[1]))
+   fo.close()
+   print()
+   print('The private key is a %s and a %s digit number.' % (len(str(publicKey[0])), len(str(publicKey[1]))))
+   print('Writing private key to file %s_privkey.txt...' % (name))
+   
+   fo = open('%s_privkey.txt' % (name), 'w')
+   fo.write('%s,%s,%s' % (keySize, privateKey[0], privateKey[1]))
+   fo.close()
+
+def encrypt(message, key_file_path):
+    try:
+        # Read the public key from file
+        with open(key_file_path, "r") as f:
+            key_size, n, e = f.readline().strip().split(',')
+        n = int(n)
+        e = int(e)
+
+        # Convert the message to an integer
+        message_as_int = int.from_bytes(message.encode('utf-8'), 'big')
+
+        # Encrypt the message
+        encrypted_int = pow(message_as_int, e, n)
+
+        # Convert the encrypted integer back to bytes
+        # The size of the byte array needs to be calculated correctly
+        encrypted_message = encrypted_int.to_bytes((encrypted_int.bit_length() + 7) // 8, 'big')
         
-        if is_prime(num):
-            print("Prime number found!" + str(num))
-            return num
+        return encrypted_message
 
-def gcd(a, b):
-    while b:
-        a, b = b, a % b
-    return a
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+    
+def decrypt(encrypted_message, key_file_path):
+    try:
+        # Read the private key from file
+        with open(key_file_path, "r") as f:
+            key_size, n, d = f.readline().strip().split(',')
+        n = int(n)
+        d = int(d)
 
-def mod_inverse(a, m):
-    m0, x0, x1 = m, 0, 1
-    while a > 1:
-        q = a // m
-        m, a = a % m, m
-        x0, x1 = x1 - q * x0, x0
-    return x1 + m0 if x1 < 0 else x1
+        # Convert the encrypted message to an integer
+        encrypted_int = int.from_bytes(encrypted_message, 'big')
 
-def generate_keypair(bits):
-    p = generate_prime(bits)
-    q = generate_prime(bits)
+        # Decrypt the message
+        decrypted_int = pow(encrypted_int, d, n)
 
-    n = p * q
-    phi = (p - 1) * (q - 1)
+        # Convert the decrypted integer back to bytes
+        decrypted_message_bytes = decrypted_int.to_bytes((decrypted_int.bit_length() + 7) // 8, 'big')
 
-    while True:
-        e = random.randrange(2, phi)
-        if gcd(e, phi) == 1:
-            break
+        # Decode the bytes back to a string
+        return decrypted_message_bytes.decode('utf-8')
 
-    d = mod_inverse(e, phi)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
 
-    return ((n, e), (n, d))
 
-if __name__ == "__main__":
-    bit_size = int(input("Enter the desired bit size (e.g., 512, 1024, 2048): "))
-    public_key, private_key = generate_keypair(bit_size)
 
-    with open("public_key.txt", "w") as public_file:
-        public_file.write(f"Public Key (n, e):\n{n}\n{e}")
-
-    with open("private_key.txt", "w") as private_file:
-        private_file.write(f"Private Key (n, d):\n{n}\n{d}")
-
-    print(f"RSA key pair with {bit_size}-bit size generated.")
-    print("Public key saved as public_key.txt")
-    print("Private key saved as private_key.txt")
+if __name__ == '__main__':
+   main()
