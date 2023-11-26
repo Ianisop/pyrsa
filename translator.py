@@ -1,16 +1,21 @@
-import random, sys, os, rabinMiller, cryptoMath
+import random, time, os, rabinMiller, cryptoMath
 
 def main():
    makeKeyFiles('RSA_demo', 2048)
 
 def generateKey(keySize):
-   # Step 1: Create two prime numbers, p and q. Calculate n = p * q.
+   # Start timing for prime generation
+   start_time = time.time()
+
    print('Generating p prime...')
    p = rabinMiller.generateLargePrime(keySize)
    print('Generating q prime...')
    q = rabinMiller.generateLargePrime(keySize)
    n = p * q
-	
+
+   # End timing for prime generation
+   prime_gen_time = time.time() - start_time
+   print(f"Time taken to generate primes: {prime_gen_time} seconds")
    # Step 2: Create a number e that is relatively prime to (p-1)*(q-1).
    print('Generating e that is relatively prime to (p-1)*(q-1)...')
    while True:
@@ -47,6 +52,7 @@ def makeKeyFiles(name, keySize):
    fo.close()
 
 def encrypt(message, key_file_path):
+    start_time = time.time()  # Start timing
     try:
         # Read the public key from file
         with open(key_file_path, "r") as f:
@@ -63,15 +69,17 @@ def encrypt(message, key_file_path):
         # Convert the encrypted integer back to bytes
         # The size of the byte array needs to be calculated correctly
         encrypted_message = encrypted_int.to_bytes((encrypted_int.bit_length() + 7) // 8, 'big')
-        
+        encrypt_time = time.time() - start_time  # End timing
+        print(f"Time taken to encrypt: {encrypt_time} seconds")
         return encrypted_message
 
     except Exception as e:
         print(f"An error occurred: {e}")
         return None
     
+    
 def decrypt(encrypted_message, key_file_path):
-    try:
+        start_time = time.time()  # Start timing
         # Read the private key from file
         with open(key_file_path, "r") as f:
             key_size, n, d = f.readline().strip().split(',')
@@ -86,13 +94,11 @@ def decrypt(encrypted_message, key_file_path):
 
         # Convert the decrypted integer back to bytes
         decrypted_message_bytes = decrypted_int.to_bytes((decrypted_int.bit_length() + 7) // 8, 'big')
-
+        decrypt_time = time.time() - start_time  # End timing
+        print(f"Time taken to decrypt: {decrypt_time} seconds")
         # Decode the bytes back to a string
         return decrypted_message_bytes.decode('utf-8')
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return None
 
 
 
