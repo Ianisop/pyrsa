@@ -1,7 +1,9 @@
 import random, time, os, rabinMiller, cryptoMath
 
+
 def main():
-   makeKeyFiles('RSA_demo', 2048)
+   makeKeyFiles('', 32)
+
 
 def generateKey(keySize):
    # Start timing for prime generation
@@ -32,6 +34,7 @@ def generateKey(keySize):
    print('Private key:', privateKey)
    return (publicKey, privateKey)
 
+
 def makeKeyFiles(name, keySize):
    if os.path.exists('%s_pubkey.txt' % (name)) or os.path.exists('%s_privkey.txt' % (name)):
      return "keys are already made"
@@ -50,6 +53,7 @@ def makeKeyFiles(name, keySize):
    fo = open('%s_privkey.txt' % (name), 'w')
    fo.write('%s,%s,%s' % (keySize, privateKey[0], privateKey[1]))
    fo.close()
+
 
 def encrypt(message, key_file_path):
     start_time = time.time()  # Start timing
@@ -91,15 +95,13 @@ def decrypt(encrypted_message, key_file_path):
 
         # Decrypt the message
         decrypted_int = pow(encrypted_int, d, n)
-
         # Convert the decrypted integer back to bytes
+
         decrypted_message_bytes = decrypted_int.to_bytes((decrypted_int.bit_length() + 7) // 8, 'big')
         decrypt_time = time.time() - start_time  # End timing
         print(f"Time taken to decrypt: {decrypt_time} seconds")
         # Decode the bytes back to a string
         return decrypted_message_bytes.decode('utf-8')
-
-
 
 
 if __name__ == '__main__':

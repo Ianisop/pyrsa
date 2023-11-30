@@ -1,12 +1,12 @@
 import translator
 
-emessage = translator.encrypt("ianis is best", "RSA_demo_pubkey.txt")
+emessage = translator.encrypt("microsoft", "_pubkey.txt")
 
 print(str(emessage))
 
 a = input("Decrypt?: ")
 if a != "":
-    bmessage = translator.decrypt(emessage, "RSA_demo_privkey.txt")
+    bmessage = translator.decrypt(emessage, "_privkey.txt")
     print(str(bmessage))
 
 
